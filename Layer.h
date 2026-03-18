@@ -1,14 +1,15 @@
 #pragma once
 
 #include <functional>
+#include <stdexcept>
 #include "Tensor.h"
 #include "math_func.h"
 
 class Layer
 {
 private:
-    Tensor weight;
-    Tensor bias;
+    Tensor weights_;
+    Tensor bias_;
 
     std::vector<double> lastValuesResult;   // after activation
     std::vector<double> lastValuesBeforAct; // before activation
@@ -16,9 +17,17 @@ private:
     std::function<double(double)> activation;
     std::function<double(double)> derevativeActivation;
 
-    Tensor linearOperations(const Tensor &input)
+    Tensor linearOperations(const Tensor &input, bool memorize_values = true)
     {
-        return input.multiplication(weight) + bias;
+        Tensor final_values = input.multiplication(weights_) + bias_;
+
+        if (memorize_values) {
+            for (int i = 0; i < final_values.getRow(0).size(); i++)
+            {
+                lastValuesBeforAct.push_back(final_values(0, i));
+            }
+        }
+        return final_values;
     }
 
     Tensor nonLinearOperations(const Tensor &input, bool memorize_values = true)
@@ -33,7 +42,6 @@ private:
             if (memorize_values)
             {
                 lastValuesResult.push_back(clear_value);
-                lastValuesBeforAct.push_back(final_values(0, i));
             }
         }
         return input;
@@ -41,8 +49,11 @@ private:
 
     Tensor deltaToLinear(Tensor const &deltaError)
     {
-        // TODO: Vec derivative of activation func (Instead of Tensor())
-        return deltaError.adamarMultiplication(Tensor(lastValuesBeforAct));
+        std::vector<double> valueAfterDerevative; 
+        for (double value : lastValuesBeforAct) {
+            valueAfterDerevative.push_back(derevativeActivation(value));
+        }
+        return deltaError.adamarMultiplication(Tensor(valueAfterDerevative));
     }
 
     Tensor deltaWeight(Tensor const &deltaLinear)
@@ -57,19 +68,61 @@ private:
 
     Tensor deltaToNext(Tensor const &deltaLinear)
     {
-        return deltaLinear.multiplication(weight.transpose());
+        return deltaLinear.multiplication(weights_.transpose());
     }
 
 public:
+    Layer(size_t inputSize, size_t outputSize)
+        : weights_(inputSize, outputSize, 0.0), bias_(1, outputSize, 0.0) {
+    }
+
+    Layer(const Tensor& weights, const Tensor& bias)
+        : weights_(weights), bias_(bias) {
+    }
+
+    Tensor& weights() {
+        return weights_;
+    }
+
+    const Tensor& weights() const {
+        return weights_;
+    }
+
+    Tensor& bias() {
+        return bias_;
+    }
+
+    const Tensor& bias() const {
+        return bias_;
+    }
+
+    double get_weight(size_t inputIndex, size_t outputIndex) const {
+        return weights_(inputIndex, outputIndex);
+    }
+
+    Tensor get_output_weights(size_t outputIndex) const {
+        return weights_.getCol(outputIndex);
+    }
+
+    Tensor get_input_connections(size_t inputIndex) const {
+        return weights_.getRow(inputIndex);
+    }
+
     Tensor forward(const Tensor &input, bool memorizeValues = true)
     {
+        if (input.rows() != 1 || input.cols() != weights_.rows()) {
+            throw std::invalid_argument(
+                "forward: input must be a row vector of size 1 x inputSize"
+            );
+        }
+
         if (memorizeValues)
         {
             lastValuesBeforAct.clear();
             lastValuesResult.clear();
         }
 
-        return nonLinearOperations(linearOperations(input), memorizeValues);
+        return nonLinearOperations(linearOperations(input, memorizeValues), memorizeValues);
     }
 
     Tensor backward(Tensor deltaError, double speed, double moment)
@@ -80,11 +133,11 @@ public:
         for (auto i = 0; i < dWeight.getCol(0).size(); i++)
         {
             new_delta_weight(
-                weight, 
+                weights_, 
                 lastValuesResult[i], 
                 dWeight.getRow(i), 
                 speed, moment, 
-                Tensor(0, weight.getRow(i).size()));
+                Tensor(0, weights_.getRow(i).size()));
         }
         return deltaToNext(deltaLinear);
     }
