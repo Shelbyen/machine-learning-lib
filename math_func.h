@@ -31,7 +31,7 @@ double summ(const vector<double>& weights, const vector<double>& deltas) {
 }
 
 // double delta(double neuron_value, vector<double>& weights, vector<double>& deltas, double ideal_value) {
-//     if (zero_vec(weights, 1e-10) == false) {
+//     if (!zero_vec(weights, 1e-10)) {
 //         return (1 - neuron_value) * neuron_value * summ(weights, deltas);
 //     }
 //     else {
@@ -54,7 +54,7 @@ double deltaSig(double neuron_value, vector<double>& weights, vector<double>& de
     return (1 - neuron_value) * neuron_value * summ(weights, deltas);
 }
 
-void new_delta_weight(  // TODO: fix shit ()
+void new_delta_weight(  
         Tensor& weights,
         double neuron_value,
         Tensor const& deltas,
@@ -67,19 +67,7 @@ void new_delta_weight(  // TODO: fix shit ()
                 double delta_weight = speed * (neuron_value * deltas(0, j)) + moment * previous_deltas(0, j);
                 weights(i, j) += delta_weight;
         }
-    }
-    /*
-    В классе Layer добавить:
-    Tensor prevWeightDeltas_;
-    Tensor prevBiasDeltas_;
-
-    weights_ = weights_ - dWeight * speed + prevWeightDeltas_ * moment;
-    prevWeightDeltas_ = dWeight * speed;
-
-    bias_ = bias_ - dBias * speed + prevBiasDeltas_ * moment;
-    prevBiasDeltas_ = dBias * speed;
-    */
-    
+    }  
 }
 
 double MSE(vector<double>& neuron_values, vector<double>& ideal_values) {
