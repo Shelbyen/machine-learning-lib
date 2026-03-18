@@ -68,11 +68,12 @@ private:
 
 public:
     Layer(size_t inputSize, size_t outputSize)
-        : weights_(inputSize, outputSize, 0.0), bias_(1, outputSize, 0.0) {
+        : weights_(inputSize, outputSize), bias_(1, outputSize) {
     }
 
-    Layer(const Tensor& weights, const Tensor& bias)
-        : weights_(weights), bias_(bias) {
+    Layer(const Tensor& weights)
+        : weights_(weights),
+        bias_(1, weights.cols(), 0.0) {
     }
 
     Tensor& weights() {
