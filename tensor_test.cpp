@@ -82,5 +82,18 @@ int tensor_test() {
         }
     }
 
+    {
+        Tensor t(2, 2);
+
+        t(0, 0) = 1;
+        t(0, 1) = 2;
+        t(1, 0) = 3;
+        t(1, 1) = 4;
+
+        t.clear();
+
+        t.print();
+    }
+
     return 0;
 }
