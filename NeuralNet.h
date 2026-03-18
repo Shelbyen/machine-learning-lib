@@ -14,6 +14,10 @@ public:
     void setLearningRate(double lr) { learningRate_ = lr; }
     void setMomentum(double m) { momentum_ = m; }
 
+    void addLayer(const Layer& layer) {
+        layers_.push_back(layer);
+    }
+
     Tensor forward(Tensor const &input) {
         Tensor result = input;
         for (auto& layer : layers_) {
