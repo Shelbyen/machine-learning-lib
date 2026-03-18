@@ -5,6 +5,9 @@
 #include <cstddef>
 #include <iterator>
 #include <iostream>
+#include <random>
+#include <cmath>
+#include <algorithm>
 
 class Tensor {
 private:
@@ -19,8 +22,21 @@ private:
 public:
     Tensor() : rows_(0), cols_(0) {}
 
-    Tensor(size_t rows, size_t cols, double value = 0.0)
-        : data_(rows* cols, value), rows_(rows), cols_(cols) {
+    Tensor(size_t rows, size_t cols, double value = NAN)
+        : data_(rows* cols), rows_(rows), cols_(cols) {
+
+        if (std::isnan(value)) {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<> dist(-0.5, 0.5);
+
+            for (size_t i = 0; i < data_.size(); ++i) {
+                data_[i] = dist(gen);
+            }
+        }
+        else {
+            std::fill(data_.begin(), data_.end(), value);
+        }
     }
 
     Tensor(std::vector<double> data)
