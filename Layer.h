@@ -11,7 +11,7 @@ private:
     Tensor weights_;
     Tensor bias_;
 
-    std::vector<double> lastValuesResult;   // after activation
+    Tensor lastInput_;
     std::vector<double> lastValuesBeforAct; // before activation
 
     std::function<double(double)> activation;
@@ -19,6 +19,11 @@ private:
 
     Tensor linearOperations(const Tensor &input, bool memorize_values = true)
     {
+        if (memorize_values)
+        {
+            lastInput_ = input;
+        }
+
         Tensor final_values = input.multiplication(weights_) + bias_;
 
         if (memorize_values) {
@@ -38,13 +43,8 @@ private:
         {
             auto clear_value = activation(input(0, i));
             final_values(0, i) = clear_value;
-
-            if (memorize_values)
-            {
-                lastValuesResult.push_back(clear_value);
-            }
         }
-        return input;
+        return final_values;
     }
 
     Tensor deltaToLinear(Tensor const &deltaError)
@@ -58,12 +58,7 @@ private:
 
     Tensor deltaWeight(Tensor const &deltaLinear)
     {
-        return Tensor(lastValuesResult).transpose().multiplication(deltaLinear);
-    }
-
-    Tensor delteBias(Tensor const &deltaLinear)
-    {
-        return deltaLinear;
+        return Tensor(lastInput_).transpose().multiplication(deltaLinear);
     }
 
     Tensor deltaToNext(Tensor const &deltaLinear)
@@ -96,6 +91,11 @@ public:
         return bias_;
     }
 
+    void setActivation(std::function<double(double)> act, std::function<double(double)> deriv) {
+        activation = act;
+        derevativeActivation = deriv;
+    }
+
     double get_weight(size_t inputIndex, size_t outputIndex) const {
         return weights_(inputIndex, outputIndex);
     }
@@ -119,7 +119,7 @@ public:
         if (memorizeValues)
         {
             lastValuesBeforAct.clear();
-            lastValuesResult.clear();
+            lastInput_ = Tensor();    // TODO: clear func
         }
 
         return nonLinearOperations(linearOperations(input, memorizeValues), memorizeValues);
@@ -130,14 +130,26 @@ public:
         Tensor deltaLinear = deltaToLinear(deltaError);
         Tensor dWeight = deltaWeight(deltaLinear);
         Tensor dBias = deltaLinear;
+
+        // TODO: add prev delta
         for (auto i = 0; i < dWeight.getCol(0).size(); i++)
         {
             new_delta_weight(
                 weights_, 
-                lastValuesResult[i], 
+                lastInput_(0, i), 
                 dWeight.getRow(i), 
                 speed, moment, 
                 Tensor(0, weights_.getRow(i).size()));
+        }
+
+        for (auto i = 0; i < dBias.getCol(0).size(); i++)
+        {
+            new_delta_weight(
+                bias_, 
+                1, 
+                dBias.getRow(i), 
+                speed, moment, 
+                Tensor(0, bias_.getRow(i).size()));
         }
         return deltaToNext(deltaLinear);
     }

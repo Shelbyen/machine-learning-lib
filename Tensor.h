@@ -95,7 +95,7 @@ public:
     }
 
     Tensor adamarMultiplication(const Tensor& other) const {
-        if (cols_ != other.rows_ || rows_ != other.rows_) {
+        if (rows_ != other.rows_ || cols_ != other.cols_) {
             throw std::invalid_argument("adamarMultiplication: shape mismatch");
         }
 

@@ -54,7 +54,7 @@ double deltaSig(double neuron_value, vector<double>& weights, vector<double>& de
     return (1 - neuron_value) * neuron_value * summ(weights, deltas);
 }
 
-void new_delta_weight(
+void new_delta_weight(  // TODO: fix shit ()
         Tensor& weights,
         double neuron_value,
         Tensor const& deltas,
@@ -62,12 +62,23 @@ void new_delta_weight(
         double moment,
         const Tensor& previous_deltas
     ) {
-    for (auto i = 0; i < deltas.getCol(0).size(); i++) {
+    for (auto i = 0; i < deltas.getRow(0).size(); i++) {
         for(size_t j = 0; j < weights.getRow(0).size(); ++j) {
                 double delta_weight = speed * (neuron_value * deltas(0, j)) + moment * previous_deltas(0, j);
                 weights(i, j) += delta_weight;
         }
     }
+    /*
+    В классе Layer добавить:
+    Tensor prevWeightDeltas_;
+    Tensor prevBiasDeltas_;
+
+    weights_ = weights_ - dWeight * speed + prevWeightDeltas_ * moment;
+    prevWeightDeltas_ = dWeight * speed;
+
+    bias_ = bias_ - dBias * speed + prevBiasDeltas_ * moment;
+    prevBiasDeltas_ = dBias * speed;
+    */
     
 }
 
@@ -86,11 +97,12 @@ double MSE(vector<double>& neuron_values, vector<double>& ideal_values) {
 Tensor softmax(Tensor const &values) {
     Tensor result = Tensor(1, values.getRow(0).size());
     double exp_sum = 0.0;
+
     for (auto i = 0; i < values.getRow(0).size(); i++) {
-        exp_sum = exp(result(0, i));
+        exp_sum += exp(values(0, i));
     }
     for (auto i = 0; i < values.getRow(0).size(); i++) {
-        result(0, i) = exp(result(0, i) / exp_sum);
+        result(0, i) = exp(values(0, i)) / exp_sum;
     }
     return result;
 }
