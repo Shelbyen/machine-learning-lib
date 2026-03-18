@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <cstddef>
 #include <iterator>
+#include <iostream>
 
 class Tensor {
 private:
@@ -24,6 +25,12 @@ public:
 
     Tensor(std::vector<double> data)
         : data_(data), rows_(1), cols_(data.size()) {
+    }
+
+    void clear() {
+        for (size_t i = 0; i < data_.size(); ++i) {
+            data_[i] = 0.0;
+        }
     }
 
     size_t rows() const {
