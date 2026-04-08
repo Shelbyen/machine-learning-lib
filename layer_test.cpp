@@ -1,12 +1,16 @@
 #include "Layer.h"
 #include <iostream>
 
-
-int layer_test() {
+int layer_test()
+{
     Tensor w(2, 3);
 
-    w(0, 0) = 1; w(0, 1) = 2; w(0, 2) = 3;
-    w(1, 0) = 4; w(1, 1) = 5; w(1, 2) = 6;
+    w(0, 0) = 1;
+    w(0, 1) = 2;
+    w(0, 2) = 3;
+    w(1, 0) = 4;
+    w(1, 1) = 5;
+    w(1, 2) = 6;
 
     Layer layer(w);
 

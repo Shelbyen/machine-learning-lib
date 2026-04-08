@@ -3,8 +3,8 @@
 #include "Layer.h"
 #include "math_func.h"
 
-
-class NeuralNet {
+class NeuralNet
+{
 private:
     std::vector<Layer> layers_;
     double learningRate_ = 0.01;
@@ -14,28 +14,34 @@ public:
     void setLearningRate(double lr) { learningRate_ = lr; }
     void setMomentum(double m) { momentum_ = m; }
 
-    void addLayer(const Layer& layer) {
+    void addLayer(const Layer &layer)
+    {
         layers_.push_back(layer);
     }
 
-    Tensor forward(Tensor const &input) {
+    Tensor forward(Tensor const &input)
+    {
         Tensor result = input;
-        for (auto& layer : layers_) {
+        for (auto &layer : layers_)
+        {
             result = layer.forward(result);
         }
         return result;
     }
 
-    Tensor backward(const Tensor& outputGradient) {
+    Tensor backward(const Tensor &outputGradient)
+    {
         Tensor gradient = outputGradient;
         // Проходим слои в обратном порядке
-        for (auto it = layers_.rbegin(); it != layers_.rend(); ++it) {
+        for (auto it = layers_.rbegin(); it != layers_.rend(); ++it)
+        {
             gradient = it->backward(gradient, learningRate_, momentum_);
         }
         return gradient; // градиент по входу (может пригодиться)
     }
 
-    void train(const Tensor& input, const Tensor& target) {
+    void train(const Tensor &input, const Tensor &target)
+    {
         Tensor output = forward(input);
         // Предполагаем, что функция потерь уже включена в градиент
         // Для примера возьмём MSE и вычислим градиент вручную (выход - цель)
@@ -44,7 +50,8 @@ public:
     }
 
     // Предсказание
-    Tensor predict(const Tensor& input) {
+    Tensor predict(const Tensor &input)
+    {
         return forward(input);
     }
 };

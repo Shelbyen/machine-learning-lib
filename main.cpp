@@ -3,7 +3,8 @@
 int tensor_test();
 int layer_test();
 
-int main() {
+int main()
+{
     tensor_test();
     std::cout << "\n";
     layer_test();

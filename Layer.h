@@ -26,7 +26,8 @@ private:
 
         Tensor final_values = input.multiplication(weights_) + bias_;
 
-        if (memorize_values) {
+        if (memorize_values)
+        {
             for (int i = 0; i < final_values.getRow(0).size(); i++)
             {
                 lastValuesBeforAct.push_back(final_values(0, i));
@@ -49,8 +50,9 @@ private:
 
     Tensor deltaToLinear(Tensor const &deltaError)
     {
-        std::vector<double> valueAfterDerevative; 
-        for (double value : lastValuesBeforAct) {
+        std::vector<double> valueAfterDerevative;
+        for (double value : lastValuesBeforAct)
+        {
             valueAfterDerevative.push_back(derevativeActivation(value));
         }
         return deltaError.adamarMultiplication(Tensor(valueAfterDerevative));
@@ -68,59 +70,69 @@ private:
 
 public:
     Layer(size_t inputSize, size_t outputSize)
-        : weights_(inputSize, outputSize), bias_(1, outputSize) {
+        : weights_(inputSize, outputSize), bias_(1, outputSize)
+    {
     }
 
-    Layer(const Tensor& weights)
+    Layer(const Tensor &weights)
         : weights_(weights),
-        bias_(1, weights.cols(), 0.0) {
+          bias_(1, weights.cols(), 0.0)
+    {
     }
 
-    Tensor& weights() {
+    Tensor &weights()
+    {
         return weights_;
     }
 
-    const Tensor& weights() const {
+    const Tensor &weights() const
+    {
         return weights_;
     }
 
-    Tensor& bias() {
+    Tensor &bias()
+    {
         return bias_;
     }
 
-    const Tensor& bias() const {
+    const Tensor &bias() const
+    {
         return bias_;
     }
 
-    void setActivation(std::function<double(double)> act, std::function<double(double)> deriv) {
+    void setActivation(std::function<double(double)> act, std::function<double(double)> deriv)
+    {
         activation = act;
         derevativeActivation = deriv;
     }
 
-    double get_weight(size_t inputIndex, size_t outputIndex) const {
+    double get_weight(size_t inputIndex, size_t outputIndex) const
+    {
         return weights_(inputIndex, outputIndex);
     }
 
-    Tensor get_output_weights(size_t outputIndex) const {
+    Tensor get_output_weights(size_t outputIndex) const
+    {
         return weights_.getCol(outputIndex);
     }
 
-    Tensor get_input_connections(size_t inputIndex) const {
+    Tensor get_input_connections(size_t inputIndex) const
+    {
         return weights_.getRow(inputIndex);
     }
 
     Tensor forward(const Tensor &input, bool memorizeValues = true)
     {
-        if (input.rows() != 1 || input.cols() != weights_.rows()) {
+        if (input.rows() != 1 || input.cols() != weights_.rows())
+        {
             throw std::invalid_argument(
-                "forward: input must be a row vector of size 1 x inputSize"
-            );
+                "forward: input must be a row vector of size 1 x inputSize");
         }
 
         if (memorizeValues)
         {
             lastValuesBeforAct.clear();
-            lastInput_ = Tensor();    // TODO: clear func
+            lastInput_ = Tensor(); // TODO: clear func
         }
 
         return nonLinearOperations(linearOperations(input, memorizeValues), memorizeValues);
@@ -136,20 +148,20 @@ public:
         for (auto i = 0; i < dWeight.getCol(0).size(); i++)
         {
             new_delta_weight(
-                weights_, 
-                lastInput_(0, i), 
-                dWeight.getRow(i), 
-                speed, moment, 
+                weights_,
+                lastInput_(0, i),
+                dWeight.getRow(i),
+                speed, moment,
                 Tensor(0, weights_.getRow(i).size()));
         }
 
         for (auto i = 0; i < dBias.getCol(0).size(); i++)
         {
             new_delta_weight(
-                bias_, 
-                1, 
-                dBias.getRow(i), 
-                speed, moment, 
+                bias_,
+                1,
+                dBias.getRow(i),
+                speed, moment,
                 Tensor(0, bias_.getRow(i).size()));
         }
         return deltaToNext(deltaLinear);
