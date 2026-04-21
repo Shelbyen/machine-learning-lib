@@ -13,6 +13,7 @@ int layer_test()
     w(1, 2) = 6;
 
     Layer layer(w);
+    layer.setActivation(ActivationType::ReLU);
 
     std::cout << "Weights:\n";
     layer.weights().print();

@@ -7,103 +7,148 @@
 
 using namespace std;
 
-bool zero_vec(const vector<double> &weights, double epsilon = 1e-10)
+inline bool zero_vec(const vector<double>& weights, double epsilon = 1e-10)
 {
-    for (double val : weights)
-    {
-        if (fabs(val) > epsilon)
-        {
-            return false;
-        }
-    }
-    return true;
+	for (double val : weights)
+	{
+		if (fabs(val) > epsilon)
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
-double summ(const vector<double> &weights, const vector<double> &deltas)
+inline double summ(const vector<double>& weights, const vector<double>& deltas)
 {
-    if (weights.size() != deltas.size())
-    {
-        return 0.0;
-    }
+	if (weights.size() != deltas.size())
+	{
+		return 0.0;
+	}
 
-    double sum = 0.0;
-    for (size_t i = 0; i < weights.size(); ++i)
-    {
-        sum += weights[i] * deltas[i];
-    }
-    return sum;
+	double sum = 0.0;
+	for (size_t i = 0; i < weights.size(); ++i)
+	{
+		sum += weights[i] * deltas[i];
+	}
+	return sum;
 }
 
 // double delta(double neuron_value, vector<double> &weights, vector<double> &deltas, double ideal_value) {
 //     if (!zero_vec(weights, 1e-10)) {
 //         return (1 - neuron_value) * neuron_value * summ(weights, deltas);
 //     }
-//     else {
+//     else {она 
 //         return (ideal_value - neuron_value) * (1 - neuron_value) * neuron_value;
 //     }
 // }
 
-Tensor deltaSoftmaxCE(Tensor const &values, Tensor const &idealValues)
+
+inline void new_delta_weight(
+	Tensor& weights,
+	double neuron_value,
+	Tensor const& deltas,
+	double speed,
+	double moment,
+	const Tensor& previous_deltas)
 {
-    // CrossEntropy
-    return softmax(values) - idealValues;
+	for (auto i = 0; i < deltas.getRow(0).size(); i++)
+	{
+		for (size_t j = 0; j < weights.getRow(0).size(); ++j)
+		{
+			double delta_weight = speed * (neuron_value * deltas(0, j)) + moment * previous_deltas(0, j);
+			weights(i, j) += delta_weight;
+		}
+	}
 }
 
-double deltaSig(double neuron_value, vector<double> &weights, double ideal_value)
+inline double MSE(vector<double>& neuron_values, vector<double>& ideal_values)
 {
-    return (ideal_value - neuron_value) * (1 - neuron_value) * neuron_value;
+	if (neuron_values.size() != ideal_values.size())
+	{
+		return 0.0;
+	}
+	double sum_mistake = 0.0;
+	for (size_t i = 0; i < neuron_values.size(); ++i)
+	{
+		double diff = (neuron_values[i] - ideal_values[i]);
+		sum_mistake += diff * diff;
+	}
+	return sum_mistake / neuron_values.size();
 }
 
-double deltaSig(double neuron_value, vector<double> &weights, vector<double> &deltas)
+inline Tensor softmax(const Tensor& values)
 {
-    return (1 - neuron_value) * neuron_value * summ(weights, deltas);
+	size_t n = values.cols();
+	Tensor result(1, n);
+
+	double maxVal = values(0, 0);
+	for (size_t i = 1; i < n; ++i)
+	{
+		if (values(0, i) > maxVal)
+		{
+			maxVal = values(0, i);
+		}
+	}
+
+	double exp_sum = 0.0;
+	for (size_t i = 0; i < n; ++i)
+	{
+		result(0, i) = std::exp(values(0, i) - maxVal);
+		exp_sum += result(0, i);
+	}
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		result(0, i) /= exp_sum;
+	}
+
+	return result;
 }
 
-void new_delta_weight(
-    Tensor &weights,
-    double neuron_value,
-    Tensor const &deltas,
-    double speed,
-    double moment,
-    const Tensor &previous_deltas)
+inline Tensor deltaSoftmaxCE(const Tensor& values, const Tensor& idealValues)
 {
-    for (auto i = 0; i < deltas.getRow(0).size(); i++)
-    {
-        for (size_t j = 0; j < weights.getRow(0).size(); ++j)
-        {
-            double delta_weight = speed * (neuron_value * deltas(0, j)) + moment * previous_deltas(0, j);
-            weights(i, j) += delta_weight;
-        }
-    }
+	return softmax(values) - idealValues;
 }
 
-double MSE(vector<double> &neuron_values, vector<double> &ideal_values)
+inline double deltaSig(double neuron_value, vector<double>& weights, double ideal_value)
 {
-    if (neuron_values.size() != ideal_values.size())
-    {
-        return 0.0;
-    }
-    double sum_mistake = 0.0;
-    for (size_t i = 0; i < neuron_values.size(); ++i)
-    {
-        double diff = (neuron_values[i] - ideal_values[i]);
-        sum_mistake += diff * diff;
-    }
-    return sum_mistake / neuron_values.size();
+	return (ideal_value - neuron_value) * (1 - neuron_value) * neuron_value;
 }
 
-Tensor softmax(Tensor const &values)
+inline double deltaSig(double neuron_value, vector<double>& weights, vector<double>& deltas)
 {
-    Tensor result = Tensor(1, values.getRow(0).size());
-    double exp_sum = 0.0;
+	return (1 - neuron_value) * neuron_value * summ(weights, deltas);
+}
 
-    for (auto i = 0; i < values.getRow(0).size(); i++)
-    {
-        exp_sum += exp(values(0, i));
-    }
-    for (auto i = 0; i < values.getRow(0).size(); i++)
-    {
-        result(0, i) = exp(values(0, i)) / exp_sum;
-    }
-    return result;
+
+inline double identity(double x)
+{
+	return x;
+}
+
+inline double dIdentity(double)
+{
+	return 1.0;
+}
+
+inline double sigmoid(double x)
+{
+	return 1.0 / (1.0 + std::exp(-x));
+}
+
+inline double dSigmoidFromLinear(double x)
+{
+	double s = sigmoid(x);
+	return s * (1.0 - s);
+}
+
+inline double relu(double x)
+{
+	return x > 0.0 ? x : 0.0;
+}
+
+inline double dReLU(double x)
+{
+	return x > 0.0 ? 1.0 : 0.0;
 }
