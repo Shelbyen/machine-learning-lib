@@ -115,7 +115,7 @@ public:
 		switch (type)
 		{
 		case ActivationType::Identity:
-			activation = identity;
+			activation = ::identity;
 			derevativeActivation = dIdentity;
 			break;
 
